@@ -1,0 +1,5 @@
+{
+    "artifact_type": "MODULE",
+    "typeName": "Aws4You::S3::SecureBucket::MODULE",
+    "settings": {}
+}

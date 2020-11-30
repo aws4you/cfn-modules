@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Create a secured S3 bucket"
+Resources:
+
+  FirehoseDestination:
+    Type: Aws4You::S3::SecureBucket::MODULE
+    Properties:
+      KMSKeyAlias: !Sub "${AWS::StackName}"
+      ReadWriteArn: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+      ReadOnlyArn: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+
+Outputs:
+
+  SecureBucketArn:
+    Value: !GetAtt FirehoseDestinationBucket.Arn
