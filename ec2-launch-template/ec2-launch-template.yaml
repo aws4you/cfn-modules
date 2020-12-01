@@ -26,14 +26,66 @@ Resources:
     Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateData:
-        InstanceType: t3.micro
+        InstanceType: t2.micro
         ImageId: !Ref LatestAmiId
         IamInstanceProfile:
           Arn: !GetAtt EC2InstanceProfile.Arn
-        InstanceMarketOptions:
-          MarketType: spot
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - { Key: "user:project", Value: !Ref Application }
+          - ResourceType: volume
+            Tags:
+              - { Key: "user:project", Value: !Ref Application }
 
       LaunchTemplateName: !Sub '${AWS::StackName}-LaunchTemplate'
+
+  InstancesSSMResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Description: !Sub Resource group of ${Application} EC2 instances
+      Name: !Ref Application
+      ResourceQuery:
+        Query:
+          ResourceTypeFilters:
+            - AWS::EC2::Instance
+          TagFilters:
+            - { Key: "user:project", Values: [ !Ref Application ]}
+        Type: TAG_FILTERS_1_0
+      Tags:
+        - { Key: "user:project", Value: !Ref Application }
+
+  CloudWatchSSMAssociation:
+    Type: AWS::SSM::Association
+    Properties:
+      AssociationName: !Sub '${Application}-CloudWatchSSMAssociation'
+      ComplianceSeverity: HIGH
+      Name: AWS-ConfigureAWSPackage
+      Parameters:
+        action: ["Install"]
+        installationType: ["Uninstall and reinstall"]
+        name: ["AmazonCloudWatchAgent"]
+      ScheduleExpression: "rate(1 day)"
+      Targets:
+        - Key: resource-groups:Name
+          Values:
+            - !Ref InstancesSSMResourceGroup
+
+  CodeDeploySSMAssociation:
+    Type: AWS::SSM::Association
+    Properties:
+      AssociationName: !Sub '${Application}-CodeDeploySSMAssociation'
+      ComplianceSeverity: HIGH
+      Name: AWS-ConfigureAWSPackage
+      Parameters:
+        action: ["Install"]
+        installationType: ["Uninstall and reinstall"]
+        name: ["AWSCodeDeployAgent"]
+      ScheduleExpression: "rate(1 day)"
+      Targets:
+        - Key: resource-groups:Name
+          Values:
+            - !Ref InstancesSSMResourceGroup
 
 Outputs:
   EC2InstanceProfile:
