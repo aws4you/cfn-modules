@@ -1,15 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Generic EC2 role with allowed ssm, codedeploy, cloudwatch agents
 
+Parameters:
+  Application:
+    Type: String
+    Description: Application this template belongs to
+    Default: DefaultApp
+
 Resources:
 
   EC2InstanceRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Statement:
-          -
-            Action: "sts:AssumeRole"
+          - Action: "sts:AssumeRole"
             Effect: Allow
             Principal:
               Service:
@@ -29,15 +34,21 @@ Resources:
                   - "ec2:DescribeInstances"
                   - "ec2:CreateTags"
                 Resource: '*'
+      Tags:
+        - { Key: "user:project", Value: !Ref Application }
       Path: /
 
 Outputs:
 
   EC2GenericRole:
     Description: Generic EC2 role with allowed ssm, codedeploy, cloudwatch agents
-    Value: !GetAtt EC2InstanceRole.Arn
+    Value: !Ref EC2InstanceRole
+    Export:
+      Name: !Sub '${AWS::StackName}-Name'
 
   EC2GenericRoleArn:
     Description: Generic EC2 role ARN with allowed ssm, codedeploy, cloudwatch agents
-    Value: !Ref EC2InstanceRole
+    Value: !GetAtt EC2InstanceRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-Arn'
 

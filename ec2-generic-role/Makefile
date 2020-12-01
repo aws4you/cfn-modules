@@ -7,8 +7,8 @@ else
 	SOURCE_REGION ?= eu-central-1
 endif
 
-CLOUDFORMATION_TEMPLATE := ec2-launch-template.yaml
-SUBMODULE := GenericEC2LaunchTemplate
+CLOUDFORMATION_TEMPLATE := ec2-generic-role.yaml
+SUBMODULE := GenericEC2Role
 
 all:
 	@echo "****************************************************************************************"
