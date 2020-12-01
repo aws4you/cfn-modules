@@ -1,33 +1,49 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Generic launch template
 
-Resources:
+Parameters:
+  Application:
+    Type: String
+    Description: Application this template belongs to
+    Default: DefaultApp
 
-  ECGenericRoleStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: './ec2-generic-role/ec2-generic-role.yaml'
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+Resources:
 
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: "/"
       Roles:
-        - !GetAtt ECGenericRoleStack.Outputs.EC2GenericRole
+        -
+          Fn::ImportValue:
+            !Sub '${Application}-GenericEC2Role-Name'
 
-#  MyLaunchTemplate:
-#    Type: AWS::EC2::LaunchTemplate
-#    Properties:
-#      LaunchTemplateData:
-#        InstanceType: c4.large
-#        DisableApiTermination: 'true'
-#        KeyName: MyKeyPair
-#        ImageId: ami-04d5cc9b88example
-#        IamInstanceProfile:
-#          Arn:
-#            Fn::GetAtt:
-#              - MyIamInstanceProfile
-#              - Arn
-#        SecurityGroupIds:
-#          - sg-083cd3bfb8example
-#      LaunchTemplateName: MyLaunchTemplate
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        InstanceType: t3.micro
+        ImageId: !Ref LatestAmiId
+        IamInstanceProfile:
+          Arn: !GetAtt EC2InstanceProfile.Arn
+        InstanceMarketOptions:
+          MarketType: spot
+
+      LaunchTemplateName: !Sub '${AWS::StackName}-LaunchTemplate'
+
+Outputs:
+  EC2InstanceProfile:
+    Description: Generic EC2 instance profile
+    Value: !GetAtt EC2InstanceProfile.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceProfile'
+
+  LaunchTemplate:
+    Description: Generic EC2 launch template Id
+    Value: !Ref LaunchTemplate
+    Export:
+      Name: !Sub '${AWS::StackName}-Id'
